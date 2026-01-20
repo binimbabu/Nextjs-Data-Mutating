@@ -1470,5 +1470,241 @@ __html is a deliberate, awkward key name to prevent accidental use
 
 
 
+Server side input validation
+
+'http://localhost:3000/meals/share' in the browser will display the following content.
+
+import { useActionState } from 'react';
+
+  const [state, formAction] = useActionState(shareMeal, { message: null });
+
+'useActionState' first argument is the actual form action which should work when submitting form. Second argument is the initial state (initial value that has to be returned from the form action (which we pass as the first argument to  'useActionState' here 'shareMeal') has been triggered and yielded a response . Here 'state' is the response we get from server action (here 'shareMeal'). 'formAction' we pass action in 'form' html.
+
+
+    <form className={classes.form} action={formAction}>
+    </form>
+
+Then we can pass the following in jsx
+
+  {state.message && <p>{state.message}</p>}
+
+
+
+
+src/app/meals/share/page.js
+
+
+
+"use client";
+
+import classes from "./page.module.css";
+import { useActionState } from "react";
+import ImagePicker from "../../../../components/meals/image-picker";
+import { shareMeal } from "../../../../lib/actions";
+import MealsFormSubmit from "../../../../components/meals/meals-form-submit";
+export default function ShareMealPage() {
+  const [state, formAction] = useActionState(shareMeal, { message: null });
+  return (
+    <>
+      <header className={classes.header}>
+        <h1>
+          Share your <span className={classes.highlight}>favorite meal</span>
+        </h1>
+        <p>Or any other meal you feel needs sharing!</p>
+      </header>
+      <main className={classes.main}>
+        <form className={classes.form} action={formAction}>
+          <div className={classes.row}>
+            <p>
+              <label htmlFor="name">Your name</label>
+              <input type="text" id="name" name="name" required />
+            </p>
+            <p>
+              <label htmlFor="email">Your email</label>
+              <input type="email" id="email" name="email" required />
+            </p>
+          </div>
+          <p>
+            <label htmlFor="title">Title</label>
+            <input type="text" id="title" name="title" required />
+          </p>
+          <p>
+            <label htmlFor="summary">Short Summary</label>
+            <input type="text" id="summary" name="summary" required />
+          </p>
+          <p>
+            <label htmlFor="instructions">Instructions</label>
+            <textarea
+              id="instructions"
+              name="instructions"
+              rows="10"
+              required
+            ></textarea>
+          </p>
+          <ImagePicker label="Upload an image" name="image" />
+          {state.message && <p>{state.message}</p>}
+          <p className={classes.actions}>
+            <MealsFormSubmit />
+          </p>
+        </form>
+      </main>
+    </>
+  );
+}
+
+
+
+lib/actions.js
+
+
+"use server";
+
+import { redirect } from "next/navigation";
+import { saveMeal } from "./meal";
+import { revalidatePath } from "next/cache";
+function isInvalidText(text) {
+  return !text || text.trim() === "";
+}
+export async function shareMeal(prevState, formData) {
+  "use server";
+  const meal = {
+    title: formData.get("title"),
+    image: formData.get("image"),
+    summary: formData.get("summary"),
+    instructions: formData.get("instructions"),
+    creator: formData.get("name"),
+    creator_email: formData.get("email"),
+  };
+
+  if (
+    isInvalidText(meal.title) ||
+    isInvalidText(meal.summary) ||
+    isInvalidText(meal.creator) ||
+    isInvalidText(meal.creator_email) ||
+    isInvalidText(meal.instructions) ||
+    !meal.creator_email.includes("@") ||
+    !meal.image ||
+    meal.image.size === 0
+  ) {
+    return {
+      message: "Invalid input.",
+    };
+  }
+  await saveMeal(meal);
+  revalidatePath("/meals");
+  redirect("/meals");
+}
+
+
+
+
+
+
+Adding image picker file as a reusable component
+
+
+components/meals/image-picker.js
+
+
+
+"use client";
+
+import { useRef, useState } from "react";
+import Image from "next/image";
+import classes from "./image-picker.module.css";
+export default function ImagePicker({ label, name }) {
+  const [pickedImage, setPickedImage] = useState();
+  const imageInput = useRef();
+  function handlePick() {
+    imageInput.current.click();
+  }
+  function handleImageChange(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      setPickedImage(null);
+      return;
+    }
+
+    const fileReader = new FileReader();
+    fileReader.onload = () => setPickedImage(fileReader.result);
+    fileReader.readAsDataURL(file);
+  }
+  return (
+    <div className={classes.picker}>
+      <label htmlFor={name}>{label}</label>
+      <div className={classes.controls}>
+        <div className={classes.preview}>
+          {!pickedImage && <p>No Image picked yet</p>}
+          {pickedImage && (
+            <Image
+              src={pickedImage}
+              alt="The image selected by the user"
+              fill
+            />
+          )}
+        </div>
+        <input
+          className={classes.input}
+          type="file"
+          id={name}
+          accept="image/png, image/jpg, image/jpeg"
+          name={name}
+          ref={imageInput}
+          onChange={handleImageChange}
+          required
+        />
+        <button className={classes.button} type="button" onClick={handlePick}>
+          Pick an Image
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+components/meals/meals-form-submit.js
+
+"use client";
+import { useFormStatus } from "react-dom";
+export default function MealsFormSubmit() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending}>{pending ? "Submitting" : "Share Meal"}</button>
+  );
+}
+
+
+'useFormStatus' has pending until form has submitted.
+
+
+
+
+
+
+Production
+
+
+
+first the following command
+
+npm run build
+
+second command the following
+
+npm start
+
+
+
+
+
+
+'revalidatePath()' is a function that tells Nextjs to revalidate the cache that belongs to a certain route path
+for example 'revalidatePath('/meals', 'layout')' this will remove cache data in the link 'meals' and update the content in the browser page of '/meals' based on the new data when we give 'revalidatePath('/meals', 'layout')'. Here the nested route to '/meals' layout will be revalidated.
+
+To revalidate all the pages 'revalidatePath('/', 'layout')' we can give like this.
+
 
 
