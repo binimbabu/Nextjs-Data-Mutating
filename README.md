@@ -1470,6 +1470,10 @@ __html is a deliberate, awkward key name to prevent accidental use
 
 
 
+
+F
+
+
 Server side input validation
 
 'http://localhost:3000/meals/share' in the browser will display the following content.
@@ -1708,3 +1712,324 @@ To revalidate all the pages 'revalidatePath('/', 'layout')' we can give like thi
 
 
 
+
+
+
+
+metadata provided in root app/layout.js file provides the browser title with metadata title. Next.js checks in every file if we have exported any metadata. If we give a nested metadata in another file other than the metadata provided in root app/layout.js , then the nested metadata will override the root metadata (in app/layout.js).
+
+
+
+Adding dynamic metadata
+
+
+For dynamic routes in Nextjs we can give dynamic metadata by providing an async function like below (Nextjs will check if there is any function 'generateMetadata' if the function exists then Next.js will execute it and this function 'generateMetadata' must return metadata object in the function ). function 'generateMetadata' receives same props as the component (here 'MealDetailsPage' props) file that holds this function 'generateMetadata' . So, function 'generateMetadata' also gets 'params' as props like 'MealDetailsPage' has 'params' as props.
+
+
+import { getMeal } from "../../../../lib/meal";
+
+export async function generateMetadata({ params }) {
+  const meal = getMeal(params.mealSlug);
+  return {
+    title: meal.title,
+    description: meal.summary,
+  };
+}
+ 
+
+
+
+app/meals/mealSlug/page.js
+
+
+
+import classes from "./page.module.css";
+import Image from "next/image";
+import { getMeal } from "../../../../lib/meal";
+import { notFound } from "next/navigation";
+export async function generateMetadata({ params }) {
+  const meal = getMeal(params.mealSlug);
+  return {
+    title: meal.title,
+    description: meal.summary,
+  };
+}
+export default function MealDetailsPage({ params }) {
+  const meal = getMeal(params.mealSlug);
+  if (!meal) notFound();
+  meal.instructions = meal.instructions.replace(/\n/g, "<br />");
+  return (
+    <>
+      <header className={classes.header}>
+        <div className={classes.image}>
+          <Image src={meal.image} alt={meal.title} fill />
+        </div>
+        <div className={classes.headerText}>
+          <h1>{meal.title}</h1>
+          <p className={classes.creator}>
+            by <a href={`mailto:${meal.creator_email}`}>{meal.creator}</a>
+          </p>
+          <p className={classes.summary}>{meal.summary}</p>
+        </div>
+      </header>
+      <main>
+        <p
+          className={classes.instructions}
+          dangerouslySetInnerHTML={{
+            __html: meal.instructions,
+          }}
+        ></p>
+      </main>
+    </>
+  );
+}
+
+
+
+
+
+
+Part 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1️⃣ Nested Layouts
+
+Nested layouts let you wrap pages with shared UI (like navbar/sidebar).
+
+📁 Folder Structure
+app/
+ ├── layout.js
+ ├── page.js
+ ├── dashboard/
+ │     ├── layout.js
+ │     └── page.js
+
+🔹 app/layout.js (Root Layout)
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <h1>Main Layout</h1>
+        {children}
+      </body>
+    </html>
+  );
+}
+
+🔎 Line-by-line
+export default function RootLayout({ children }) {
+
+
+Creates a layout component.
+
+children represents nested pages.
+
+<html>
+
+
+Required root HTML tag in App Router.
+
+<body>
+
+
+Wraps visible content.
+
+<h1>Main Layout</h1>
+
+
+This appears on every page.
+
+{children}
+
+
+Renders page content inside layout.
+
+🔹 app/dashboard/layout.js (Nested Layout)
+export default function DashboardLayout({ children }) {
+  return (
+    <div>
+      <h2>Dashboard Sidebar</h2>
+      {children}
+    </div>
+  );
+}
+
+
+✔ This layout applies only to /dashboard routes.
+
+🔹 app/dashboard/page.js
+export default function Dashboard() {
+  return <p>Dashboard Page</p>;
+}
+
+
+📌 Visiting /dashboard shows:
+
+Main Layout
+Dashboard Sidebar
+Dashboard Page
+
+2️⃣ Route Groups
+
+Route groups organize files without affecting URL.
+
+📁 Folder Structure
+app/
+ ├── (auth)/
+ │     ├── login/
+ │     │     └── page.js
+
+
+Notice (auth) has parentheses.
+
+🔹 app/(auth)/login/page.js
+export default function Login() {
+  return <h1>Login Page</h1>;
+}
+
+🔎 Explanation
+
+(auth) is a route group.
+
+It does NOT appear in URL.
+
+URL becomes:
+
+/login
+
+
+NOT /auth/login.
+
+✔ Used for organizing large projects.
+
+3️⃣ Middleware
+
+Middleware runs before a request is completed.
+
+Used for authentication, redirects, logging.
+
+📁 File
+middleware.js
+
+🔹 middleware.js
+import { NextResponse } from 'next/server';
+
+export function middleware(request) {
+  const isLoggedIn = false;
+
+  if (!isLoggedIn) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+🔎 Line-by-line
+import { NextResponse } from 'next/server';
+
+
+Imports helper to control response.
+
+export function middleware(request) {
+
+
+Runs before page loads.
+
+request contains request info.
+
+const isLoggedIn = false;
+
+
+Simulating authentication check.
+
+if (!isLoggedIn) {
+
+
+If user not logged in...
+
+return NextResponse.redirect(new URL('/login', request.url));
+
+
+Redirect to /login.
+
+return NextResponse.next();
+
+
+Continue to requested page.
+
+4️⃣ Protected Routes
+
+Protect pages using middleware or layout.
+
+Example using Layout Protection
+app/dashboard/layout.js
+import { redirect } from 'next/navigation';
+
+export default function DashboardLayout({ children }) {
+  const isLoggedIn = false;
+
+  if (!isLoggedIn) {
+    redirect('/login');
+  }
+
+  return <div>{children}</div>;
+}
+
+🔎 Explanation
+import { redirect } from 'next/navigation';
+
+
+Used to programmatically redirect.
+
+const isLoggedIn = false;
+
+
+Replace with real auth logic.
+
+redirect('/login');
+
+
+Immediately redirects if not logged in.
+
+✔ Now /dashboard is protected.
