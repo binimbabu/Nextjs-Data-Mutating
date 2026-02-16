@@ -1789,6 +1789,458 @@ export default function MealDetailsPage({ params }) {
 
 
 
+
+Project to explain routing in detail
+
+
+
+
+dummy-news.js
+
+
+
+export const DUMMY_NEWS = [
+  {
+    id: "n1",
+    slug: "will-ai-replace-humans",
+    title: "Will AI Replace Humans?",
+    image: "ai-robot.jpg",
+    date: "2021-07-01",
+    content:
+      "Since late 2022 AI is on the rise and therefore many people worry whether AI will replace humans. The answer is not that simple. AI is a tool that can be used to automate tasks, but it can also be used to augment human capabilities. The future is not set in stone, but it is clear that AI will play a big role in the future. The question is how we will use it.",
+  },
+  {
+    id: "n2",
+    slug: "beaver-plague",
+    title: "A Plague of Beavers",
+    image: "beaver.jpg",
+    date: "2022-05-01",
+    content:
+      "Beavers are taking over the world. They are building dams everywhere and flooding entire cities. What can we do to stop them?",
+  },
+  {
+    id: "n3",
+    slug: "couple-cooking",
+    title: "Spend more time together!",
+    image: "couple-cooking.jpg",
+    date: "2024-03-01",
+    content:
+      "Cooking together is a great way to spend more time with your partner. It is fun and you get to eat something delicious afterwards. What are you waiting for? Get cooking!",
+  },
+  {
+    id: "n4",
+    slug: "hiking",
+    title: "Hiking is the best!",
+    image: "hiking.jpg",
+    date: "2024-01-01",
+    content:
+      "Hiking is a great way to get some exercise and enjoy the great outdoors. It is also a great way to clear your mind and reduce stress. So what are you waiting for? Get out there and start hiking!",
+  },
+  {
+    id: "n5",
+    slug: "landscape",
+    title: "The beauty of landscape",
+    image: "landscape.jpg",
+    date: "2022-07-01",
+    content:
+      "Landscape photography is a great way to capture the beauty of nature. It is also a great way to get outside and enjoy the great outdoors. So what are you waiting for? Get out there and start taking some pictures!",
+  },
+];
+
+
+
+
+
+
+app/news/page.js
+
+
+
+import { DUMMY_NEWS } from "@/dummy-news";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getNewsItem } from "@/lib/news";
+export default async function NewsDetailsPage({ params }) {
+  let newsSlug = params.slug;
+  const newItem = await getNewsItem(newsSlug);
+  // let newItem = DUMMY_NEWS.find((item) => item.slug === newsSlug);
+
+  if (!newItem) notFound();
+  return (
+    <article className="news-article">
+      <header>
+        <Link href={`/news/${newItem.slug}/image`}>
+          <img src={`/images/news/${newItem.image}`} alt={newItem.title} />
+        </Link>
+        <h1>{newItem.title} </h1>
+        <time dateTime={newItem.date}>{newItem.date}</time>
+      </header>
+      <p>{newItem.content}</p>
+    </article>
+  );
+}
+
+
+
+app/news/[slug]/page.js
+
+
+
+import { DUMMY_NEWS } from "@/dummy-news";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getNewsItem } from "@/lib/news";
+export default async function NewsDetailsPage({ params }) {
+  let newsSlug = params.slug;
+  const newItem = await getNewsItem(newsSlug);
+  // let newItem = DUMMY_NEWS.find((item) => item.slug === newsSlug);
+
+  if (!newItem) notFound();
+  return (
+    <article className="news-article">
+      <header>
+        <Link href={`/news/${newItem.slug}/image`}>
+          <img src={`/images/news/${newItem.image}`} alt={newItem.title} />
+        </Link>
+        <h1>{newItem.title} </h1>
+        <time dateTime={newItem.date}>{newItem.date}</time>
+      </header>
+      <p>{newItem.content}</p>
+    </article>
+  );
+}
+
+
+
+
+'notFound()' function will trigger the 'not-found.js' (root  file 'not-found.js' or nested 'not-found.js' if exists) by Nextjs 
+
+
+
+app/not-found.js
+
+
+
+export default function NotFoundPage() {
+  return (
+    <div id="error">
+      <h1>Not Found</h1>
+      <p>The requested resource could not be found</p>
+    </div>
+  );
+}
+
+
+
+when the request url doesn't exist then 'not-found.js' content will be shown
+
+
+
+
+
+Parallel Routes
+
+
+app/archive is created which is parallel to app/news
+
+When we navigate to 'http://localhost:3000/archive' should however be a page that actually consists of 2 parallel pages ( 2 parallel routes ) . Parallel Routes render the content of 2 (here) separate routes with separate paths on one and same page. To set up Parallel Routing we should have layout.js file as ('app/archive/layout.js'). Then we need a subfolder for parallel routes (app/archive/@archive). We can add as many parallel routes as we want (here we are creating 2 Parallel Routes). The subfolder for Parallel Routes starts with '@' (this is the naming convention used by Next.js to identify parallel routing), followed by any text. In 'app/archive/@archive' (here one consists of archiving into news (diving into different years and months)). Second parallel route for the already route 'app/archive/@archive' used here is 'app/archive/@latest' (while other is latest news independent from the news that was chosen from the archive)
+
+
+
+app/archive/@archive/page.js
+
+
+export default function ArchivePage() {
+  return (
+    <div>
+      <h1>Archive Page</h1>
+      </div>
+  );
+}
+
+
+
+
+app/archive/@latest/page.js
+
+
+export default function LatestNewsPage() {
+  return (
+    <div>
+      <h1>Latest Page</h1>
+      </div>
+  );
+}
+
+
+
+
+In 'layout.js' with parallel routes next to it (here app/archive/layout.js (here ArchiveLayout))  will have props not 'children' like root layout.js ( app/layout.js ) but the parallel routes subfolder name after '@' given as parallel route naming convention will come as props for 'app/archive/layout.js' like 'archive' and 'latest'
+
+
+
+
+
+
+app/archive/layout.js
+
+
+
+
+export default function ArchiveLayout({ archive, latest }) {
+  return (
+    <div>
+      <h1>Archive</h1>
+      <section id="archive-filter">{archive}</section>
+      <section id="archive-latest">{latest}</section>
+    </div>
+  );
+}
+
+
+
+'{archive}' in '<section id="archive-filter">{archive}</section>' in the 'app/archive/layout.js' will display the content given in the 'app/archive/@archive/page.js' and {latest} in <section id="archive-latest">{latest}</section> will display the content given in the 'app/archive/@latest/page.js'
+
+
+So, what happens in parallel route is in the url 'http://localhost:3000/archive' we get both the routes data in 'app/archive/@archive/page.js' and 'app/archive/@latest/page.js' when typing this url ('http://localhost:3000/archive') in browser.
+
+Here in 'app/archive/@archive/page.js' will be filtering news based on filtered years and months. We can a dynamic route to 'app/archive/@archive' by giving 'app/archive/@archive/[year]'.
+So, we add 'page.js' to this 'app/archive/@archive/[year]' as 'app/archive/@archive/[year]/page.js'.
+
+'app/archive/@archive/page.js' we are replacing the above code with the following 
+ 
+
+
+app/archive/@archive/page.js
+
+
+import {
+  getAvailableNewsMonths,
+  getAvailableNewsYears,
+  getNewsForYear,
+  getNewsForYearAndMonth,
+} from "@/lib/news";
+
+
+export default function ArchivePage() {
+
+  let links = avaialbleYears;
+
+ return (
+    <header id="archive-header">
+    <nav>
+       <ul>
+        {links.map((link) => {
+          const href = `/archive/${link}`;
+          return (
+            <li key={link}>
+              <Link href={href}>{link}</Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+
+    </header>
+  );
+}
+
+
+Here outputs all 'years' of news we have (like for example 2024, 2020, 2000).  When clicking on the year the content in 'app/archive/@archive/[year]/page.js' will come up like below
+
+
+
+app/archive/@archive/[year]/page.js
+
+
+import NewsList from "@/components/news-list";
+import getAllNews from "@/lib/news";
+
+export default function FilteredNewsPage({params}) {
+
+const newsYear = params.year;
+const news = getNewsForYear(newsYear);
+
+  return (
+    <div>
+      <h1>filtered news Page</h1>
+      <NewsList news={news} />
+      </div>
+  );
+}
+
+
+
+
+
+components/news-list.js
+
+
+import Link from "next/link";
+export default function NewsList({ news }) {
+  return (
+    <ul className="news-list">
+      {news.map((newsItem) => (
+        <li key={newsItem.id}>
+          <Link href={`/news/${newsItem.slug}`}>
+            <img src={`/images/news/${newsItem.image}`} alt={newsItem.title} />
+            <span>{newsItem.title}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+
+
+
+app/news/page.js
+
+
+import NewsList from "@/components/news-list";
+import getAllNews from "@/lib/news";
+export default async function News() {
+  const news = await getAllNews();
+
+  return (
+    <>
+      <h1>News Page</h1>
+      <NewsList news={news} />
+    </>
+  );
+}
+
+
+
+
+
+But when we type this url 'http://localhost:3000/archive/2024' we get error because 'app/archive/@latest' doesn't contain dynamic route like this 'app/archive/@archive/[year]' and the parallel route using the same url 'http://localhost:3000/archive' followed by an year.
+
+So, Next.js adds to add a 'default.js' file (this file can be added when dealing with parallel routes because its that file that allows you to define the default fallback content that should be displayed if the route doesn't have a more specific content for the url path that's currently loaded).
+
+
+app/archive/@latest/default.js
+
+
+import NewsList from "@/components/news-list";
+import { getLatestNews } from "@/lib/news";
+
+export default async function LatestNewsPage() {
+  const latestNews = await getLatestNews();
+  return (
+    <>
+      <h2>Latest News</h2>
+      <NewsList news={latestNews} />
+    </>
+  );
+}
+
+
+
+
+When we click on the year in 'http://localhost:3000/archive' then we need to choose a month we don't have that option (in http://localhost:3000/archive/2024). This problem can be solved by changing 'app/archive/@archive/[year]' ( dynamic route) into catch all route like ( app/archive/@archive/[[...filter]] ).
+Where '[year]' replaced with '[[...filter]]' where 'filter' used here can have any identifier name of your choice. This '[[...filter]]' will ensure '(app/archive/@archive/[[...filter]]/page.js' will be activated for any path segments after archive (here 'http://localhost:3000/archive') in this case. No matter how many segments we have there and no matter how they are named.
+
+So, now 'params.year' doesn't exists rather 'params.filter' will be existing.
+
+
+app/archive/@archive/[year]/page.js
+
+
+import NewsList from "@/components/news-list";
+import getAllNews from "@/lib/news";
+
+export default function FilteredNewsPage({params}) {
+
+const newsYear = params.filter;
+const news = getNewsForYear(newsYear);
+
+  return (
+    <div>
+      <h1>filtered news Page</h1>
+      <NewsList news={news} />
+      </div>
+  );
+}
+
+
+
+Here 'params.filter' filter will give all matched segments like 'http://localhost:3000/archive/2024' or 'http://localhost:3000/archive/2024/3' (where 2024 year and 3 month).
+
+But there is a problem 'app/archive/@archive/[[...filter]]/page.js' and 'app/archive/@archive/page.js' will collide each other to resolve that we can remove ('app/archive/@archive/page.js' ) this page.js file. And change the code for 'app/archive/@archive/[[...filter]]/page.js' like below
+
+
+app/archive/@archive/[[...filter]]/page.js
+
+
+import NewsList from "@/components/news-list";
+import {
+  getAvailableNewsMonths,
+  getAvailableNewsYears,
+  getNewsForYear,
+  getNewsForYearAndMonth,
+} from "@/lib/news";
+
+export default function FilteredNewsPage({params}) {
+
+const newsYear = params.filter;
+const selectedYear = filter?.[0];
+const selectedMonth = filter?.[1];
+
+let news;
+
+let links = getAvailableNewsYears();
+
+if(selectedYear && !selectedMonth){
+news = getNewsForYear(selectedYear);
+links = getAvailableNewsMonths(selectedYear);
+}
+if(selectedYear && selectedMonth){
+news = getNewsForYearAndmonth(selectedYear,selectedMonth);
+links=[];
+}
+let newsContent = <p>No news found for the selected period </p>
+
+
+if(news && news.length > 0){
+newsContent = <NewsList news={news} />;
+}
+
+const news = getNewsForYear(newsYear);
+
+
+  return (
+<>
+   <header id="archive-header">
+    <nav>
+       <ul>
+        {links.map((link) => {
+         const href = selectedYear ? `/archive/${selectedYear}/${link}` : `/archive/${link}`;
+          return (
+            <li key={link}>
+              <Link href={href}>{link}</Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+
+    </header>
+{newsContent}
+</>
+}
+}
+
+
+
+' getAvailableNewsMonths(selectedYear)' gets months related to the 'selectedYear', if both 'selectedYear' and 'selectedMonth' exists then  getNewsForYearAndmonth(selectedYear,selectedMonth) gets the news related to the 'selectedYear' and 'selectedMonth'.
+
+const href = selectedYear ? `/archive/${selectedYear}/${link}` : `/archive/${link}`; 
+
+
+If 'selectedYear' exists then months will be listed otherwise only the years.
+
 Part 2
 
 
